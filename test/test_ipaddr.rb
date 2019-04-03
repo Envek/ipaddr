@@ -115,6 +115,42 @@ class TC_IPAddr < Test::Unit::TestCase
     assert_raise(IPAddr::InvalidAddressError) { IPAddr.new("4294967296") }
   end
 
+  def test_s_ipfuscator_comatible
+    # https://vincentyiu.co.uk/red-team/cve-exploitation/ipfuscation
+    # https://github.com/vysecurity/IPFuscator
+    # Decimal
+    assert_equal "127.0.0.1", IPAddr.new("2130706433").to_s
+    # Hexadecimal
+    assert_equal "127.0.0.1", IPAddr.new("0x7f000001").to_s
+    # Octal:
+    assert_equal "127.0.0.1", IPAddr.new("017700000001").to_s
+
+    # Full Hex:
+    assert_equal "127.0.0.1", IPAddr.new("0x7f.0x0.0x0.0x1").to_s
+    # Full Oct
+    assert_equal "127.0.0.1", IPAddr.new("0177.0.0.01").to_s
+
+    # Random Padding:
+    # Hex:
+    assert_equal "127.0.0.1", IPAddr.new("0x000000000007f.0x000000000000000000000000000000.0x0000.0x0000000000000000000000001").to_s
+    # Oct:
+    assert_equal "127.0.0.1", IPAddr.new("00000000000000000000000177.000000000000000000.00000000000000000000000000000.000001").to_s
+
+    # Random base:
+    assert_equal "127.0.0.1", IPAddr.new("0x7f.0x0.0.01").to_s
+    assert_equal "127.0.0.1", IPAddr.new("0x7f.0x0.0x0.1").to_s
+    assert_equal "127.0.0.1", IPAddr.new("0177.0x0.0x0.0x1").to_s
+    assert_equal "127.0.0.1", IPAddr.new("0x7f.0.0.01").to_s
+    assert_equal "127.0.0.1", IPAddr.new("127.0x0.0.0x1").to_s
+
+    #Random base with random padding:
+    assert_equal "127.0.0.1", IPAddr.new("127.0x00000000.000000.000000000000000001").to_s
+    assert_equal "127.0.0.1", IPAddr.new("127.0x0000000000000.0x00000000000000000000000000000.0001").to_s
+    assert_equal "127.0.0.1", IPAddr.new("0000000000000000177.0x0000000000000000000000.0x00000000000000000000000000.1").to_s
+    assert_equal "127.0.0.1", IPAddr.new("0000000000000000000177.0.000000.1").to_s
+    assert_equal "127.0.0.1", IPAddr.new("127.0000000000000000000000.0x0000000000000000000.000000000000000000000000000001").to_s
+  end
+
   def test_s_new_ntoh
     addr = ''
     IPAddr.new("1234:5678:9abc:def0:1234:5678:9abc:def0").hton.each_byte { |c|
